@@ -1,0 +1,72 @@
+{{- if .Values.export.enabled }}
+# Dedicated service account: only the export job gets S3 access (EKS Pod Identity association
+# for <namespace>/orders-export is created by lab-terraform/envs/extension). The web pods get none.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orders-export
+  labels:
+    {{- include "orders-api.labels" . | nindent 4 }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-export
+  labels:
+    {{- include "orders-api.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.export.schedule | quote }}
+  timeZone: {{ .Values.export.timeZone | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "orders-api.name" . }}-export
+        spec:
+          serviceAccountName: orders-export
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: export
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              command: ["python", "-m", "orders_api.export"]
+              env:
+                - name: EXPORT_BUCKET
+                  value: {{ required "export.bucket is required when export.enabled" .Values.export.bucket | quote }}
+                - name: EXPORT_PREFIX
+                  value: "exports/{{ .Release.Namespace }}"
+                - name: APP_ENV
+                  value: {{ .Values.env.APP_ENV | quote }}
+                - name: AWS_DEFAULT_REGION
+                  value: {{ .Values.export.region | quote }}
+              envFrom:
+                - secretRef:
+                    name: {{ .Values.dbSecretName }}
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+{{- end }}

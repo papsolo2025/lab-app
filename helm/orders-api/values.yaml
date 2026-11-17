@@ -1,0 +1,57 @@
+replicaCount: 2
+
+image:
+  repository: ""   # set by the pipeline: <account>.dkr.ecr.<region>.amazonaws.com/orders-api
+  tag: ""          # set by the pipeline: <git sha>-<build number>
+  pullPolicy: IfNotPresent
+
+# Non-secret settings
+env:
+  APP_ENV: dev
+  CHAOS_ERROR_RATE: "0"
+  CHAOS_LATENCY_MS: "0"
+
+# Kubernetes Secret with DB_HOST, DB_NAME, DB_USER, DB_PASSWORD (created by lab-ops/scripts/sync-db-secret.sh)
+dbSecretName: orders-db
+
+service:
+  port: 80
+  targetPort: 8080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+# One shared ALB for the whole lab (IngressGroup). Only prod enables it.
+ingress:
+  enabled: false
+  groupName: devops-lab
+  groupOrder: 100
+  inboundCidrs: ""   # e.g. 203.0.113.10/32 - restrict who can reach the ALB
+  path: /
+
+# Daily export of the last 24h of orders to S3 (Day 15). Needs lab-terraform/envs/extension applied.
+# The pipeline sets export.bucket automatically.
+export:
+  enabled: false
+  bucket: ""
+  schedule: "0 6 * * *"
+  timeZone: "America/Vancouver"
+  region: us-west-2

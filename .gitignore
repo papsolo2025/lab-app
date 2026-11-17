@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.coverage
+coverage.xml
+test-results.xml
+trivy-*.json
+dist/
+.kube/
+.scannerwork/

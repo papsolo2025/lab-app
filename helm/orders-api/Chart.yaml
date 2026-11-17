@@ -1,0 +1,6 @@
+apiVersion: v2
+name: orders-api
+description: Orders API - DevOps lab application
+type: application
+version: 0.1.0      # overwritten by the pipeline (0.1.<build number>)
+appVersion: "dev"   # overwritten by the pipeline (image tag)

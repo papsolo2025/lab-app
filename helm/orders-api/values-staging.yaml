@@ -1,0 +1,7 @@
+replicaCount: 2
+env:
+  APP_ENV: staging
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3

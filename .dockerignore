@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+*.pyc
+tests
+helm
+.coverage
+coverage.xml
+test-results.xml
+*.json
+Jenkinsfile

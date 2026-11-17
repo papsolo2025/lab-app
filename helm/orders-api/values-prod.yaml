@@ -1,0 +1,14 @@
+replicaCount: 3
+env:
+  APP_ENV: prod
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 6
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+ingress:
+  enabled: true
+  # Put your IP here (or pass --set ingress.inboundCidrs=...) so only you can reach the app.
+  inboundCidrs: ""
