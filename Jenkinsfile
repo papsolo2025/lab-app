@@ -154,9 +154,11 @@ pipeline {
 }
 
 // Helm upgrade + rollout wait + smoke test. Helm rolls back automatically if the rollout fails.
+// No --create-namespace: namespaces are created by the platform (install.sh) and Jenkins only has
+// edit rights inside dev/staging/prod - it can't create namespaces (least privilege).
 def deploy(String ns) {
   sh """
-    helm upgrade --install ${env.APP} "${env.CHART}" --namespace ${ns} --create-namespace \
+    helm upgrade --install ${env.APP} "${env.CHART}" --namespace ${ns} \
       -f "${env.CHART}/values-${ns}.yaml" \
       --set image.repository="${env.REGISTRY}/${env.APP}" --set image.tag="${env.IMAGE_TAG}" \
       --set export.bucket="devops-lab-orders-exports-${env.ACCOUNT_ID}" \
